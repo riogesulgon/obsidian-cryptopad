@@ -1,0 +1,350 @@
+/* CryptoPad — Keyboard-Centric Obsidian Plugin Styles */
+
+.cryptopad-modal {
+  padding: 0 !important;
+  overflow: hidden;
+}
+
+/* Make the modal a good width */
+.modal:has(.cryptopad-modal) {
+  width: min(550px, 95vw);
+}
+
+.cryptopad-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 20px;
+  border-bottom: 1px solid var(--background-modifier-border);
+  background: linear-gradient(135deg, #8b6f47 0%, #a0826d 100%);
+  border-radius: var(--modal-radius) var(--modal-radius) 0 0;
+}
+
+.cryptopad-title {
+  font-size: 16px;
+  font-weight: 700;
+  color: #fff;
+  letter-spacing: -0.3px;
+}
+
+.cryptopad-status {
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.8);
+  font-weight: 500;
+  font-family: var(--font-monospace);
+  text-align: right;
+  flex: 1;
+  margin-left: 20px;
+}
+
+.cryptopad-mode-badge {
+  display: inline-block;
+  background: rgba(255, 255, 255, 0.35);
+  color: #fff;
+  padding: 3px 8px;
+  border-radius: 4px;
+  font-weight: 700;
+  font-size: 12px;
+  letter-spacing: 0.5px;
+  margin-right: 8px;
+  backdrop-filter: blur(4px);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+}
+
+.cryptopad-command-row {
+  display: flex;
+  align-items: center;
+  padding: 8px 20px;
+  border-bottom: 1px solid var(--background-modifier-border);
+  background: var(--background-primary-alt);
+  gap: 6px;
+  font-family: var(--font-monospace);
+}
+
+.cryptopad-command-row > span {
+  font-weight: 600;
+  color: var(--text-muted);
+  font-size: 14px;
+}
+
+.cryptopad-command-input {
+  flex: 1;
+  border: none;
+  background: transparent;
+  font-family: var(--font-monospace);
+  font-size: 14px;
+  color: var(--text-normal);
+  outline: none;
+  padding: 0;
+  min-width: 0;
+}
+
+.cryptopad-command-input::placeholder {
+  color: var(--text-muted);
+  font-size: 13px;
+}
+
+.cryptopad-body {
+  padding: 16px 20px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  background: var(--background-primary);
+  max-height: 70vh;
+  overflow-y: auto;
+}
+
+.cryptopad-label {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  color: var(--text-muted);
+  margin-bottom: 2px;
+}
+
+.cryptopad-input-field {
+  width: 100%;
+  border: 1.5px solid var(--background-modifier-border);
+  border-radius: 6px;
+  padding: 9px 11px;
+  font-size: 14px;
+  font-family: var(--font-interface);
+  color: var(--text-normal);
+  background: var(--background-primary-alt);
+  outline: none;
+  transition: border-color 0.15s, box-shadow 0.15s;
+  box-sizing: border-box;
+  resize: vertical;
+}
+
+.cryptopad-input-field:focus {
+  border-color: var(--interactive-accent);
+  box-shadow: 0 0 0 2px rgba(var(--interactive-accent-rgb, 108, 99, 255), 0.2);
+  background: var(--background-primary);
+}
+
+.cryptopad-textarea {
+  font-family: var(--font-monospace);
+  font-size: 13px;
+  line-height: 1.5;
+  min-height: 100px;
+}
+
+.cryptopad-output {
+  color: var(--text-muted);
+  word-break: break-all;
+}
+
+.cryptopad-pass-row {
+  display: flex;
+  gap: 0;
+  align-items: center;
+}
+
+.cryptopad-pass-row .cryptopad-input-field {
+  flex: 1;
+}
+
+.cryptopad-remember-row {
+  margin: 4px 0 8px;
+}
+
+.cryptopad-checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 13px;
+  color: var(--text-muted);
+  cursor: pointer;
+  user-select: none;
+}
+
+.cryptopad-checkbox-label input[type="checkbox"] {
+  accent-color: var(--interactive-accent);
+  width: 14px;
+  height: 14px;
+  cursor: pointer;
+  margin: 0;
+}
+
+.cryptopad-error {
+  background: rgba(231, 76, 60, 0.1);
+  border: 1.5px solid rgba(231, 76, 60, 0.35);
+  border-radius: 6px;
+  padding: 9px 12px;
+  font-size: 13px;
+  color: var(--text-error);
+  font-family: var(--font-monospace);
+}
+
+.cryptopad-result-block {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.cryptopad-toast {
+  position: absolute;
+  bottom: 16px;
+  left: 50%;
+  transform: translateX(-50%) translateY(10px);
+  background: var(--interactive-success, #38a169);
+  color: #fff;
+  padding: 7px 18px;
+  border-radius: 20px;
+  font-size: 13px;
+  font-weight: 600;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.2s, transform 0.2s;
+  white-space: nowrap;
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.2);
+  z-index: 100;
+}
+
+.cryptopad-toast--visible {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+
+/* Improve keyboard focus states */
+.cryptopad-input-field:focus-visible {
+  outline: 2px solid var(--interactive-accent);
+  outline-offset: 0;
+}
+
+/* Hide the old toggle button styles */
+.cryptopad-toggle-pass {
+  display: none;
+}
+
+/* Command line focus */
+.cryptopad-command-input:focus {
+  color: var(--interactive-accent);
+}
+
+/* Help section */
+.cryptopad-help {
+  margin-top: 12px;
+  padding: 10px 12px;
+  background: var(--background-secondary);
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 6px;
+  font-size: 12px;
+  color: var(--text-muted);
+  font-family: var(--font-monospace);
+}
+
+.cryptopad-help-title {
+  font-weight: 700;
+  color: var(--text-normal);
+  margin-bottom: 6px;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+
+.cryptopad-help-content {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.cryptopad-help-content div {
+  display: flex;
+  gap: 8px;
+}
+
+.cryptopad-help-content strong {
+  color: var(--interactive-accent);
+  min-width: 80px;
+  flex-shrink: 0;
+}
+
+/* Light mode and sepia adjustments */
+@media (prefers-color-scheme: light) {
+  .cryptopad-header {
+    background: linear-gradient(135deg, #c9a876 0%, #d4b89a 100%);
+    border-bottom: 2px solid #a0826d;
+  }
+
+  .cryptopad-title {
+    color: #3d2817;
+  }
+
+  .cryptopad-status {
+    color: rgba(61, 40, 23, 0.85);
+  }
+
+  .cryptopad-mode-badge {
+    background: rgba(61, 40, 23, 0.15);
+    color: #3d2817;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+  }
+
+  .cryptopad-command-row {
+    background: #f5f1ed;
+    border-bottom: 1px solid #e8e2d8;
+  }
+
+  .cryptopad-command-row > span {
+    color: #8b6f47;
+  }
+
+  .cryptopad-command-input:focus {
+    color: #a0826d;
+  }
+
+  .cryptopad-input-field {
+    background: #faf7f3;
+    border-color: #e0d5c7;
+  }
+
+  .cryptopad-input-field:focus {
+    background: #fff;
+    border-color: #a0826d;
+    box-shadow: 0 0 0 2px rgba(160, 130, 109, 0.15);
+  }
+
+  .cryptopad-help {
+    background: #f5f1ed;
+    border: 1px solid #e0d5c7;
+    color: #6b5a47;
+  }
+
+  .cryptopad-help-title {
+    color: #3d2817;
+  }
+
+  .cryptopad-help-content strong {
+    color: #a0826d;
+  }
+
+  .cryptopad-error {
+    background: rgba(200, 100, 80, 0.1);
+    border: 1.5px solid rgba(200, 100, 80, 0.3);
+    color: #8b4513;
+  }
+}
+
+/* Mode badge highlight animation */
+@keyframes cryptopad-mode-highlight {
+  0% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.15);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.cryptopad-mode-badge.highlight {
+  animation: cryptopad-mode-highlight 0.4s ease-out;
+}

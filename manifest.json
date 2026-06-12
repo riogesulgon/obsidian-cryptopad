@@ -1,0 +1,10 @@
+{
+  "id": "cryptopad",
+  "name": "CryptoPad",
+  "version": "1.0.0",
+  "minAppVersion": "1.4.0",
+  "description": "Encrypt and decrypt text inline using AES-256-GCM with a keyboard shortcut.",
+  "author": "CryptoPad",
+  "authorUrl": "",
+  "isDesktopOnly": false
+}
