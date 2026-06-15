@@ -133,7 +133,6 @@ class CryptoPadModal extends Modal {
     const { contentEl, modalEl } = this;
     contentEl.empty();
     contentEl.addClass("cryptopad-modal");
-    modalEl.style.position = "relative";
     this.buildUI();
 
     // Get selected text from editor
@@ -216,12 +215,10 @@ class CryptoPadModal extends Modal {
     this.inputArea.tabIndex = 2;
 
     // Error
-    this.errorEl = bodyEl.createDiv({ cls: "cryptopad-error" });
-    this.errorEl.style.display = "none";
+    this.errorEl = bodyEl.createDiv({ cls: "cryptopad-error cryptopad-error--hidden" });
 
     // Result block
-    this.resultBlock = bodyEl.createDiv({ cls: "cryptopad-result-block" });
-    this.resultBlock.style.display = "none";
+    this.resultBlock = bodyEl.createDiv({ cls: "cryptopad-result-block cryptopad-result-block--hidden" });
     const outputLabel = this.resultBlock.createEl("label", {
       cls: "cryptopad-label",
       text: "Encrypted output",
@@ -236,18 +233,21 @@ class CryptoPadModal extends Modal {
 
     // Help section (always visible)
     const helpEl = bodyEl.createDiv({ cls: "cryptopad-help" });
-    helpEl.innerHTML = `
-      <div class="cryptopad-help-title">⌨️ Keyboard Shortcuts</div>
-      <div class="cryptopad-help-content">
-        <div><strong>:e</strong> — Encrypt mode</div>
-        <div><strong>:d</strong> — Decrypt mode</div>
-        <div><strong>:c</strong> — Copy output</div>
-        <div><strong>:q</strong> — Quit</div>
-        <div><strong>Ctrl+Enter</strong> — Process</div>
-        <div><strong>Ctrl+P</strong> — Show passphrase</div>
-        <div><strong>Ctrl+C</strong> — Copy</div>
-      </div>
-    `;
+    helpEl.createDiv({ cls: "cryptopad-help-title", text: "\u2328\ufe0f Keyboard Shortcuts" });
+    const helpContent = helpEl.createDiv({ cls: "cryptopad-help-content" });
+    [
+      [":e", "Encrypt mode"],
+      [":d", "Decrypt mode"],
+      [":c", "Copy output"],
+      [":q", "Quit"],
+      ["Ctrl+Enter", "Process"],
+      ["Ctrl+P", "Show passphrase"],
+      ["Ctrl+C", "Copy"]
+    ].forEach(([shortcut, description]) => {
+      const item = helpContent.createDiv();
+      item.createEl("strong", { text: shortcut });
+      item.appendChild(document.createTextNode(" \u2014 " + description));
+    });
 
     // Toast (attached to modal container for absolute positioning)
     const toast = modalEl.createDiv({ cls: "cryptopad-toast", text: "✅ Copied!" });
@@ -255,8 +255,10 @@ class CryptoPadModal extends Modal {
     // Helper to switch mode
     const switchMode = (newMode: "encrypt" | "decrypt") => {
       this.mode = newMode;
-      this.resultBlock.style.display = "none";
-      this.errorEl.style.display = "none";
+      this.resultBlock.removeClass("cryptopad-result-block--visible");
+      this.resultBlock.addClass("cryptopad-result-block--hidden");
+      this.errorEl.removeClass("cryptopad-error--visible");
+      this.errorEl.addClass("cryptopad-error--hidden");
       this.updateStatus();
       this.passInput.focus();
     };
@@ -266,8 +268,10 @@ class CryptoPadModal extends Modal {
       const passphrase = this.passInput.value.trim();
       const input = this.inputArea.value;
 
-      this.errorEl.style.display = "none";
-      this.resultBlock.style.display = "none";
+      this.errorEl.removeClass("cryptopad-error--visible");
+      this.errorEl.addClass("cryptopad-error--hidden");
+      this.resultBlock.removeClass("cryptopad-result-block--visible");
+      this.resultBlock.addClass("cryptopad-result-block--hidden");
 
       try {
         const remember = rememberCheck.checked;
@@ -281,11 +285,13 @@ class CryptoPadModal extends Modal {
             : await decryptText(passphrase, input);
 
         this.outputArea.value = result;
-        this.resultBlock.style.display = "flex";
+        this.resultBlock.removeClass("cryptopad-result-block--hidden");
+        this.resultBlock.addClass("cryptopad-result-block--visible");
         this.outputArea.select();
       } catch (err: unknown) {
         this.errorEl.textContent = (err as Error).message;
-        this.errorEl.style.display = "block";
+        this.errorEl.removeClass("cryptopad-error--hidden");
+        this.errorEl.addClass("cryptopad-error--visible");
       }
     };
 
@@ -336,8 +342,10 @@ class CryptoPadModal extends Modal {
       if ((e.ctrlKey || e.metaKey) && e.key === "c" && !e.shiftKey) {
         e.preventDefault();
         this.inputArea.value = "";
-        this.resultBlock.style.display = "none";
-        this.errorEl.style.display = "none";
+        this.resultBlock.removeClass("cryptopad-result-block--visible");
+        this.resultBlock.addClass("cryptopad-result-block--hidden");
+        this.errorEl.removeClass("cryptopad-error--visible");
+        this.errorEl.addClass("cryptopad-error--hidden");
       }
     });
 
@@ -377,11 +385,13 @@ class CryptoPadModal extends Modal {
             case "help":
               this.errorEl.textContent =
                 "Commands: e(ncrypt) d(ecrypt) c(opy) q(uit). Ctrl+Enter: process | Ctrl+C: clear/copy";
-              this.errorEl.style.display = "block";
+              this.errorEl.removeClass("cryptopad-error--hidden");
+              this.errorEl.addClass("cryptopad-error--visible");
               break;
             default:
               this.errorEl.textContent = `Unknown command: ${cmd}`;
-              this.errorEl.style.display = "block";
+              this.errorEl.removeClass("cryptopad-error--hidden");
+              this.errorEl.addClass("cryptopad-error--visible");
               return;
           }
         }
@@ -412,12 +422,14 @@ class CryptoPadModal extends Modal {
           case "help":
             this.errorEl.textContent =
               "Commands: e(ncrypt) d(ecrypt) c(opy) q(uit). Ctrl+Enter: process | Ctrl+C: clear/copy";
-            this.errorEl.style.display = "block";
+            this.errorEl.removeClass("cryptopad-error--hidden");
+            this.errorEl.addClass("cryptopad-error--visible");
             break;
           default:
             if (cmd.length > 0) {
               this.errorEl.textContent = `Unknown command: ${cmd}`;
-              this.errorEl.style.display = "block";
+              this.errorEl.removeClass("cryptopad-error--hidden");
+              this.errorEl.addClass("cryptopad-error--visible");
             }
         }
       }
@@ -468,7 +480,7 @@ class CryptoPadSettingTab extends PluginSettingTab {
     const { containerEl } = this;
     containerEl.empty();
 
-    containerEl.createEl("h2", { text: "🔐 CryptoPad" });
+    new Setting(containerEl).setName("🔐 CryptoPad").setHeading();
 
     new Setting(containerEl)
       .setName("Saved passphrase")
@@ -511,7 +523,7 @@ class CryptoPadSettingTab extends PluginSettingTab {
           })
       );
 
-    containerEl.createEl("h3", { text: "Keyboard shortcuts" });
+    new Setting(containerEl).setName("Keyboard shortcuts").setHeading();
     const shortcutsInfo = [
       "Ctrl+Shift+E — Open CryptoPad",
       "Ctrl+Shift+C — Open in Encrypt mode",
@@ -529,11 +541,10 @@ class CryptoPadSettingTab extends PluginSettingTab {
     const shortcutsList = containerEl.createEl("ul");
     shortcutsInfo.forEach((item) => {
       const li = shortcutsList.createEl("li", { text: item });
-      li.style.color = "var(--text-muted)";
-      li.style.fontSize = "0.9em";
+      li.addClass("cryptopad-list-item");
     });
 
-    containerEl.createEl("h3", { text: "Encryption details" });
+    new Setting(containerEl).setName("Encryption details").setHeading();
     const list = containerEl.createEl("ul");
     [
       "Cipher: AES-256-GCM",
@@ -544,8 +555,7 @@ class CryptoPadSettingTab extends PluginSettingTab {
       "API: Web Crypto API (native browser/Electron)",
     ].forEach((item) => {
       const li = list.createEl("li", { text: item });
-      li.style.color = "var(--text-muted)";
-      li.style.fontSize = "0.9em";
+      li.addClass("cryptopad-list-item");
     });
   }
 }

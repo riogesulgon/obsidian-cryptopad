@@ -3,6 +3,7 @@
 .cryptopad-modal {
   padding: 0 !important;
   overflow: hidden;
+  position: relative;
 }
 
 /* Make the modal a good width */
@@ -178,11 +179,27 @@
   font-family: var(--font-monospace);
 }
 
+.cryptopad-error--hidden {
+  display: none;
+}
+
+.cryptopad-error--visible {
+  display: block;
+}
+
 .cryptopad-result-block {
   display: flex;
   flex-direction: column;
   gap: 8px;
   margin-top: 4px;
+}
+
+.cryptopad-result-block--hidden {
+  display: none;
+}
+
+.cryptopad-result-block--visible {
+  display: flex;
 }
 
 .cryptopad-toast {
@@ -261,6 +278,12 @@
   color: var(--interactive-accent);
   min-width: 80px;
   flex-shrink: 0;
+}
+
+/* Utility classes for list items in settings */
+.cryptopad-list-item {
+  color: var(--text-muted);
+  font-size: 0.9em;
 }
 
 /* Light mode and sepia adjustments */
