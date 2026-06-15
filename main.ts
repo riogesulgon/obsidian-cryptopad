@@ -472,16 +472,15 @@ class CryptoPadModal extends Modal {
 
   private updateStatus(): void {
     const modeText = this.mode === "encrypt" ? "ENCRYPT" : "DECRYPT";
-    this.statusEl.innerHTML = `<span class="cryptopad-mode-badge">${modeText}</span> E/D to switch | Ctrl+Enter to process`;
+    this.statusEl.empty();
+    const badge = this.statusEl.createEl("span", { cls: "cryptopad-mode-badge", text: modeText });
+    this.statusEl.appendChild(document.createTextNode(" E/D to switch | Ctrl+Enter to process"));
 
     // Trigger highlight animation
-    const badge = this.statusEl.querySelector(".cryptopad-mode-badge") as HTMLElement;
-    if (badge) {
-      badge.classList.remove("highlight");
-      // Trigger reflow to restart animation
-      void badge.offsetWidth;
-      badge.classList.add("highlight");
-    }
+    badge.classList.remove("highlight");
+    // Trigger reflow to restart animation
+    void badge.offsetWidth;
+    badge.classList.add("highlight");
   }
 
   onClose(): void {
@@ -503,7 +502,7 @@ class CryptoPadSettingTab extends PluginSettingTab {
     const { containerEl } = this;
     containerEl.empty();
 
-    new Setting(containerEl).setName("🔐 CryptoPad").setHeading();
+    new Setting(containerEl).setName("Settings").setHeading();
 
     new Setting(containerEl)
       .setName("Saved passphrase")
