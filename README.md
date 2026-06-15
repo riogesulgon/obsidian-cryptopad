@@ -2,16 +2,18 @@
 
 Encrypt and decrypt text inline using a keyboard shortcut. Powered by AES-GCM + PBKDF2 via the Web Crypto API. Everything runs client-side — nothing is sent anywhere.
 
+![CryptoPad](CryptoPad.png)
+
 ## Features
 
-- **Keyboard shortcut** (`Ctrl+Shift+E` / `Cmd+Shift+E` on Mac) to open a modal on any note
+- **Keyboard shortcuts** influenced by vim to efficiently encrypt/decrypt your text
+- **Encrypt & Decrypt** tabs in one modal
+- Optional passphrase memory via plugin settings
+- Works on **desktop and mobile**
 - **AES-256-GCM** encryption with your passphrase
 - **PBKDF2-SHA256** key derivation (200,000 iterations)
 - Random salt + IV per encryption — every ciphertext is unique
-- **Encrypt & Decrypt** tabs in one modal
-- One-click **Copy** of the result
-- Optional passphrase memory via plugin settings
-- Works on **desktop and mobile**
+
 
 ## Installation
 
