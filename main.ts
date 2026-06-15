@@ -1,4 +1,4 @@
-import { App, Modal, Plugin, PluginSettingTab, Setting } from "obsidian";
+import { App, Modal, Plugin, PluginSettingTab, Setting, MarkdownView } from "obsidian";
 
 // ── Types ─────────────────────────────────────────────────────────────────
 
@@ -135,6 +135,22 @@ class CryptoPadModal extends Modal {
     contentEl.addClass("cryptopad-modal");
     modalEl.style.position = "relative";
     this.buildUI();
+
+    // Get selected text from editor
+    const selectedText = this.getSelectedText();
+    if (selectedText) {
+      this.inputArea.value = selectedText;
+      this.inputArea.focus();
+    }
+  }
+
+  private getSelectedText(): string {
+    const view = this.app.workspace.getActiveViewOfType(MarkdownView);
+    if (view && view.editor) {
+      const selection = view.editor.getSelection();
+      return selection || "";
+    }
+    return "";
   }
 
   private buildUI(): void {
@@ -229,7 +245,7 @@ class CryptoPadModal extends Modal {
         <div><strong>:q</strong> — Quit</div>
         <div><strong>Ctrl+Enter</strong> — Process</div>
         <div><strong>Ctrl+P</strong> — Show passphrase</div>
-        <div><strong>Ctrl+C</strong> — Clear / Copy</div>
+        <div><strong>Ctrl+C</strong> — Copy</div>
       </div>
     `;
 
@@ -241,8 +257,6 @@ class CryptoPadModal extends Modal {
       this.mode = newMode;
       this.resultBlock.style.display = "none";
       this.errorEl.style.display = "none";
-      this.inputArea.value = "";
-      this.outputArea.value = "";
       this.updateStatus();
       this.passInput.focus();
     };
@@ -340,7 +354,7 @@ class CryptoPadModal extends Modal {
       if (e.key === "Tab") {
         e.preventDefault();
         const cmd = this.commandInput.value.toLowerCase().trim();
-        
+
         // If there's a command, execute it. Otherwise just move to passphrase.
         if (cmd.length > 0) {
           this.commandInput.value = "";
@@ -424,7 +438,7 @@ class CryptoPadModal extends Modal {
   private updateStatus(): void {
     const modeText = this.mode === "encrypt" ? "ENCRYPT" : "DECRYPT";
     this.statusEl.innerHTML = `<span class="cryptopad-mode-badge">${modeText}</span> E/D to switch | Ctrl+Enter to process`;
-    
+
     // Trigger highlight animation
     const badge = this.statusEl.querySelector(".cryptopad-mode-badge") as HTMLElement;
     if (badge) {
