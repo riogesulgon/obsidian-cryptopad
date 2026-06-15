@@ -1,4 +1,4 @@
-import { App, Modal, Plugin, PluginSettingTab, Setting, MarkdownView } from "obsidian";
+import { App, Modal, Plugin, PluginSettingTab, Setting, MarkdownView, Notice } from "obsidian";
 
 // ── Types ─────────────────────────────────────────────────────────────────
 
@@ -123,10 +123,35 @@ class CryptoPadModal extends Modal {
     super(app);
     this.plugin = plugin;
     this.mode = plugin.settings.defaultMode;
+    plugin.lastModal = this;
   }
 
   setMode(newMode: "encrypt" | "decrypt"): void {
     this.mode = newMode;
+  }
+
+  private toastEl: HTMLDivElement | null = null;
+
+  setToastElement(toast: HTMLDivElement): void {
+    this.toastEl = toast;
+  }
+
+  getOutputValue(): string {
+    return this.outputArea.value;
+  }
+
+  replaceSelectedTextWithOutput(): boolean {
+    if (!this.outputArea.value) {
+      return false;
+    }
+    const editor = this.app.workspace.getActiveViewOfType(MarkdownView)?.editor;
+    if (!editor) {
+      return false;
+    }
+    editor.replaceSelection(this.outputArea.value);
+    new Notice("✅ Text replaced!");
+    this.close();
+    return true;
   }
 
   onOpen(): void {
@@ -185,7 +210,7 @@ class CryptoPadModal extends Modal {
     this.passInput.type = "password";
     this.passInput.autocomplete = "off";
     this.passInput.spellcheck = false;
-    this.passInput.tabIndex = 1;
+    this.passInput.tabIndex = 0;
     if (this.plugin.settings.rememberPassphrase) {
       this.passInput.value = this.plugin.settings.passphrase;
     }
@@ -198,7 +223,7 @@ class CryptoPadModal extends Modal {
     const rememberCheck = rememberLabel.createEl("input") as HTMLInputElement;
     rememberCheck.type = "checkbox";
     rememberCheck.checked = this.plugin.settings.rememberPassphrase;
-    rememberCheck.tabIndex = 2;
+    rememberCheck.tabIndex = 0;
     rememberLabel.appendText(" Remember passphrase");
 
     // Input area
@@ -212,7 +237,7 @@ class CryptoPadModal extends Modal {
     }) as HTMLTextAreaElement;
     this.inputArea.rows = 3;
     this.inputArea.spellcheck = false;
-    this.inputArea.tabIndex = 2;
+    this.inputArea.tabIndex = 0;
 
     // Error
     this.errorEl = bodyEl.createDiv({ cls: "cryptopad-error cryptopad-error--hidden" });
@@ -229,7 +254,16 @@ class CryptoPadModal extends Modal {
     this.outputArea.rows = 6;
     this.outputArea.readOnly = true;
     this.outputArea.spellcheck = false;
-    this.outputArea.tabIndex = 4;
+    this.outputArea.tabIndex = 0;
+
+    // Button row for result actions
+    const resultButtonRow = this.resultBlock.createDiv({ cls: "cryptopad-result-buttons" });
+    const copyBtn = resultButtonRow.createEl("button", { text: "📋 Copy (Ctrl+c)" });
+    copyBtn.addClass("cryptopad-button");
+    copyBtn.tabIndex = 0;
+    const replaceBtn = resultButtonRow.createEl("button", { text: "🔁 Replace (Ctrl+r) in editor" });
+    replaceBtn.addClass("cryptopad-button");
+    replaceBtn.tabIndex = 0;
 
     // Help section (always visible)
     const helpEl = bodyEl.createDiv({ cls: "cryptopad-help" });
@@ -238,11 +272,11 @@ class CryptoPadModal extends Modal {
     [
       [":e", "Encrypt mode"],
       [":d", "Decrypt mode"],
-      [":c", "Copy output"],
       [":q", "Quit"],
       ["Ctrl+Enter", "Process"],
       ["Ctrl+P", "Show passphrase"],
-      ["Ctrl+C", "Copy"]
+      ["Ctrl+C", "Copy output"],
+      ["Ctrl+R", "Replace in editor"]
     ].forEach(([shortcut, description]) => {
       const item = helpContent.createDiv();
       item.createEl("strong", { text: shortcut });
@@ -251,6 +285,7 @@ class CryptoPadModal extends Modal {
 
     // Toast (attached to modal container for absolute positioning)
     const toast = modalEl.createDiv({ cls: "cryptopad-toast", text: "✅ Copied!" });
+    this.setToastElement(toast);
 
     // Helper to switch mode
     const switchMode = (newMode: "encrypt" | "decrypt") => {
@@ -313,6 +348,16 @@ class CryptoPadModal extends Modal {
       }
     };
 
+    // Button click handlers
+    copyBtn.addEventListener("click", copyOutput);
+    replaceBtn.addEventListener("click", () => {
+      if (!this.replaceSelectedTextWithOutput()) {
+        this.errorEl.textContent = "No output to replace or no editor active";
+        this.errorEl.removeClass("cryptopad-error--hidden");
+        this.errorEl.addClass("cryptopad-error--visible");
+      }
+    });
+
     // ── Keyboard shortcuts ──
     this.passInput.addEventListener("keydown", (e: KeyboardEvent) => {
       // Ctrl+P to toggle visibility
@@ -355,87 +400,65 @@ class CryptoPadModal extends Modal {
         e.preventDefault();
         copyOutput();
       }
+
+      if ((e.ctrlKey || e.metaKey) && e.key === "r" && !e.shiftKey) {
+        e.preventDefault();
+        this.replaceSelectedTextWithOutput();
+      }
     });
 
     // Command handler
+    const processCommand = (cmd: string) => {
+      switch (cmd) {
+        case "e":
+          switchMode("encrypt");
+          return true;
+        case "d":
+          switchMode("decrypt");
+          return true;
+        case "c":
+          copyOutput();
+          return true;
+        case "q":
+        case "quit":
+        case "exit":
+          this.close();
+          return true;
+        case "h":
+        case "help":
+          this.errorEl.textContent =
+            "Commands: e(ncrypt) d(ecrypt) c(opy) q(uit). Ctrl+Enter: process | Ctrl+C: copy";
+          this.errorEl.removeClass("cryptopad-error--hidden");
+          this.errorEl.addClass("cryptopad-error--visible");
+          return true;
+        default:
+          if (cmd.length > 0) {
+            this.errorEl.textContent = `Unknown command: ${cmd}`;
+            this.errorEl.removeClass("cryptopad-error--hidden");
+            this.errorEl.addClass("cryptopad-error--visible");
+          }
+          return false;
+      }
+    };
+
     this.commandInput.addEventListener("keydown", (e: KeyboardEvent) => {
       if (e.key === "Tab") {
         e.preventDefault();
         const cmd = this.commandInput.value.toLowerCase().trim();
-
-        // If there's a command, execute it. Otherwise just move to passphrase.
         if (cmd.length > 0) {
           this.commandInput.value = "";
-          switch (cmd) {
-            case "e":
-              switchMode("encrypt");
-              break;
-            case "d":
-              switchMode("decrypt");
-              break;
-            case "c":
-              copyOutput();
-              break;
-            case "q":
-            case "quit":
-            case "exit":
-              this.close();
-              return;
-            case "h":
-            case "help":
-              this.errorEl.textContent =
-                "Commands: e(ncrypt) d(ecrypt) c(opy) q(uit). Ctrl+Enter: process | Ctrl+C: clear/copy";
-              this.errorEl.removeClass("cryptopad-error--hidden");
-              this.errorEl.addClass("cryptopad-error--visible");
-              break;
-            default:
-              this.errorEl.textContent = `Unknown command: ${cmd}`;
-              this.errorEl.removeClass("cryptopad-error--hidden");
-              this.errorEl.addClass("cryptopad-error--visible");
-              return;
-          }
+          processCommand(cmd);
         }
-        // Move focus to passphrase after command execution or if no command
         this.passInput.focus();
       }
       if (e.key === "Enter") {
         e.preventDefault();
         const cmd = this.commandInput.value.toLowerCase().trim();
         this.commandInput.value = "";
-
-        switch (cmd) {
-          case "e":
-            switchMode("encrypt");
-            break;
-          case "d":
-            switchMode("decrypt");
-            break;
-          case "c":
-            copyOutput();
-            break;
-          case "q":
-          case "quit":
-          case "exit":
-            this.close();
-            break;
-          case "h":
-          case "help":
-            this.errorEl.textContent =
-              "Commands: e(ncrypt) d(ecrypt) c(opy) q(uit). Ctrl+Enter: process | Ctrl+C: clear/copy";
-            this.errorEl.removeClass("cryptopad-error--hidden");
-            this.errorEl.addClass("cryptopad-error--visible");
-            break;
-          default:
-            if (cmd.length > 0) {
-              this.errorEl.textContent = `Unknown command: ${cmd}`;
-              this.errorEl.removeClass("cryptopad-error--hidden");
-              this.errorEl.addClass("cryptopad-error--visible");
-            }
-        }
+        processCommand(cmd);
       }
       if (e.key === "Escape") {
         this.commandInput.value = "";
-        this.inputArea.focus();
       }
     });
 
@@ -532,6 +555,7 @@ class CryptoPadSettingTab extends PluginSettingTab {
       "Ctrl+P — Toggle passphrase visibility",
       "Ctrl+Enter — Encrypt/Decrypt",
       "Ctrl+C — Clear input (in textarea) or copy output",
+      "Ctrl+R — Replace selected text in editor with output",
       ":e — Switch to Encrypt mode",
       ":d — Switch to Decrypt mode",
       ":c — Copy output",
@@ -564,6 +588,7 @@ class CryptoPadSettingTab extends PluginSettingTab {
 
 export default class CryptoPadPlugin extends Plugin {
   settings: CryptoPadSettings = DEFAULT_SETTINGS;
+  lastModal: CryptoPadModal | null = null;
 
   async onload(): Promise<void> {
     await this.loadSettings();
@@ -599,6 +624,18 @@ export default class CryptoPadPlugin extends Plugin {
         const modal = new CryptoPadModal(this.app, this);
         modal.setMode("decrypt");
         modal.open();
+      },
+    });
+
+
+    this.addCommand({
+      id: "replace-with-output",
+      name: "Replace selection with encrypted/decrypted text",
+      hotkeys: [{ modifiers: ["Mod", "Shift"], key: "R" }],
+      callback: () => {
+        if (this.lastModal && this.lastModal.getOutputValue()) {
+          this.lastModal.replaceSelectedTextWithOutput();
+        }
       },
     });
 
