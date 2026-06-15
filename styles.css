@@ -1,13 +1,12 @@
 /* CryptoPad — Keyboard-Centric Obsidian Plugin Styles */
 
 .cryptopad-modal {
-  padding: 0 !important;
+  padding: 0;
   overflow: hidden;
   position: relative;
 }
 
-/* Make the modal a good width */
-.modal:has(.cryptopad-modal) {
+.modal .cryptopad-modal {
   width: min(550px, 95vw);
 }
 

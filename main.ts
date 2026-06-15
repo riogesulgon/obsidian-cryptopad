@@ -47,7 +47,7 @@ async function deriveKey(passphrase: string, salt: Uint8Array): Promise<CryptoKe
     ["deriveKey"]
   );
   return crypto.subtle.deriveKey(
-    { name: "PBKDF2", salt, iterations: PBKDF2_ITERATIONS, hash: "SHA-256" },
+    { name: "PBKDF2", salt: salt as BufferSource, iterations: PBKDF2_ITERATIONS, hash: "SHA-256" },
     keyMaterial,
     { name: "AES-GCM", length: 256 },
     false,
@@ -155,7 +155,7 @@ class CryptoPadModal extends Modal {
   }
 
   onOpen(): void {
-    const { contentEl, modalEl } = this;
+    const { contentEl } = this;
     contentEl.empty();
     contentEl.addClass("cryptopad-modal");
     this.buildUI();
@@ -178,7 +178,7 @@ class CryptoPadModal extends Modal {
   }
 
   private buildUI(): void {
-    const { contentEl, modalEl } = this;
+    const { contentEl } = this;
 
     // ── Header with status ──
     const header = contentEl.createDiv({ cls: "cryptopad-header" });
@@ -192,7 +192,7 @@ class CryptoPadModal extends Modal {
     this.commandInput = commandRow.createEl("input", {
       cls: "cryptopad-command-input",
       placeholder: "e/d/c/q",
-    }) as HTMLInputElement;
+    });
     this.commandInput.autocomplete = "off";
     this.commandInput.spellcheck = false;
     this.commandInput.tabIndex = 0;
@@ -206,7 +206,7 @@ class CryptoPadModal extends Modal {
     this.passInput = passRow.createEl("input", {
       cls: "cryptopad-input-field",
       placeholder: "Enter passphrase... (Ctrl+P to toggle visibility)",
-    }) as HTMLInputElement;
+    });
     this.passInput.type = "password";
     this.passInput.autocomplete = "off";
     this.passInput.spellcheck = false;
@@ -220,21 +220,21 @@ class CryptoPadModal extends Modal {
     const rememberLabel = rememberRow.createEl("label", {
       cls: "cryptopad-checkbox-label",
     });
-    const rememberCheck = rememberLabel.createEl("input") as HTMLInputElement;
+    const rememberCheck = rememberLabel.createEl("input");
     rememberCheck.type = "checkbox";
     rememberCheck.checked = this.plugin.settings.rememberPassphrase;
     rememberCheck.tabIndex = 0;
     rememberLabel.appendText(" Remember passphrase");
 
     // Input area
-    const inputLabel = bodyEl.createEl("label", {
+    bodyEl.createEl("label", {
       cls: "cryptopad-label",
       text: "Text to encrypt/decrypt",
     });
     this.inputArea = bodyEl.createEl("textarea", {
       cls: "cryptopad-input-field cryptopad-textarea",
       placeholder: "Type or paste text here... (Ctrl+Enter to process, Ctrl+C to clear)",
-    }) as HTMLTextAreaElement;
+    });
     this.inputArea.rows = 3;
     this.inputArea.spellcheck = false;
     this.inputArea.tabIndex = 0;
@@ -244,13 +244,13 @@ class CryptoPadModal extends Modal {
 
     // Result block
     this.resultBlock = bodyEl.createDiv({ cls: "cryptopad-result-block cryptopad-result-block--hidden" });
-    const outputLabel = this.resultBlock.createEl("label", {
+    this.resultBlock.createEl("label", {
       cls: "cryptopad-label",
       text: "Encrypted output",
     });
     this.outputArea = this.resultBlock.createEl("textarea", {
       cls: "cryptopad-input-field cryptopad-textarea cryptopad-output",
-    }) as HTMLTextAreaElement;
+    });
     this.outputArea.rows = 6;
     this.outputArea.readOnly = true;
     this.outputArea.spellcheck = false;
@@ -280,11 +280,11 @@ class CryptoPadModal extends Modal {
     ].forEach(([shortcut, description]) => {
       const item = helpContent.createDiv();
       item.createEl("strong", { text: shortcut });
-      item.appendChild(document.createTextNode(" \u2014 " + description));
+      item.appendText(" \u2014 " + description);
     });
 
     // Toast (attached to modal container for absolute positioning)
-    const toast = modalEl.createDiv({ cls: "cryptopad-toast", text: "✅ Copied!" });
+    const toast = contentEl.createDiv({ cls: "cryptopad-toast", text: "✅ Copied!" });
     this.setToastElement(toast);
 
     // Helper to switch mode
@@ -333,7 +333,7 @@ class CryptoPadModal extends Modal {
     // ── Copy helper ──
     const showToast = () => {
       toast.addClass("cryptopad-toast--visible");
-      setTimeout(() => toast.removeClass("cryptopad-toast--visible"), 2000);
+      window.setTimeout(() => toast.removeClass("cryptopad-toast--visible"), 2000);
     };
 
     const copyOutput = async () => {
@@ -343,13 +343,19 @@ class CryptoPadModal extends Modal {
         showToast();
       } catch {
         this.outputArea.select();
-        document.execCommand("copy");
+        try {
+          await navigator.clipboard.writeText(this.outputArea.value);
+        } catch {
+          // Fallback silently if copy fails
+        }
         showToast();
       }
     };
 
     // Button click handlers
-    copyBtn.addEventListener("click", copyOutput);
+    copyBtn.addEventListener("click", () => {
+      void copyOutput();
+    });
     replaceBtn.addEventListener("click", () => {
       if (!this.replaceSelectedTextWithOutput()) {
         this.errorEl.textContent = "No output to replace or no editor active";
@@ -381,7 +387,7 @@ class CryptoPadModal extends Modal {
       // Ctrl+Enter to process
       if ((e.ctrlKey || e.metaKey) && e.key === "Enter") {
         e.preventDefault();
-        handleAction();
+        void handleAction();
       }
       // Ctrl+C to clear
       if ((e.ctrlKey || e.metaKey) && e.key === "c" && !e.shiftKey) {
@@ -398,7 +404,7 @@ class CryptoPadModal extends Modal {
       // Ctrl+C to copy from output
       if ((e.ctrlKey || e.metaKey) && e.key === "c" && !e.shiftKey) {
         e.preventDefault();
-        copyOutput();
+        void copyOutput();
       }
 
       if ((e.ctrlKey || e.metaKey) && e.key === "r" && !e.shiftKey) {
@@ -417,7 +423,7 @@ class CryptoPadModal extends Modal {
           switchMode("decrypt");
           return true;
         case "c":
-          copyOutput();
+          void copyOutput();
           return true;
         case "q":
         case "quit":
@@ -472,16 +478,15 @@ class CryptoPadModal extends Modal {
 
   private updateStatus(): void {
     const modeText = this.mode === "encrypt" ? "ENCRYPT" : "DECRYPT";
-    this.statusEl.innerHTML = `<span class="cryptopad-mode-badge">${modeText}</span> E/D to switch | Ctrl+Enter to process`;
+    this.statusEl.empty();
+    const badge = this.statusEl.createEl("span", { cls: "cryptopad-mode-badge", text: modeText });
+    this.statusEl.appendText(" E/D to switch | Ctrl+Enter to process");
 
     // Trigger highlight animation
-    const badge = this.statusEl.querySelector(".cryptopad-mode-badge") as HTMLElement;
-    if (badge) {
-      badge.classList.remove("highlight");
-      // Trigger reflow to restart animation
-      void badge.offsetWidth;
-      badge.classList.add("highlight");
-    }
+    badge.classList.remove("highlight");
+    // Trigger reflow to restart animation
+    void badge.offsetWidth;
+    badge.classList.add("highlight");
   }
 
   onClose(): void {
@@ -502,8 +507,6 @@ class CryptoPadSettingTab extends PluginSettingTab {
   display(): void {
     const { containerEl } = this;
     containerEl.empty();
-
-    new Setting(containerEl).setName("🔐 CryptoPad").setHeading();
 
     new Setting(containerEl)
       .setName("Saved passphrase")
@@ -597,7 +600,6 @@ export default class CryptoPadPlugin extends Plugin {
     this.addCommand({
       id: "open-cryptopad",
       name: "Open CryptoPad",
-      hotkeys: [{ modifiers: ["Mod", "Shift"], key: "E" }],
       callback: () => {
         new CryptoPadModal(this.app, this).open();
       },
@@ -606,8 +608,7 @@ export default class CryptoPadPlugin extends Plugin {
     // Quick encrypt command
     this.addCommand({
       id: "encrypt-quick",
-      name: "Open in Encrypt mode",
-      hotkeys: [{ modifiers: ["Mod", "Shift"], key: "C" }],
+      name: "Quick Encrypt",
       callback: () => {
         const modal = new CryptoPadModal(this.app, this);
         modal.setMode("encrypt");
@@ -618,8 +619,7 @@ export default class CryptoPadPlugin extends Plugin {
     // Quick decrypt command
     this.addCommand({
       id: "decrypt-quick",
-      name: "Open in Decrypt mode",
-      hotkeys: [{ modifiers: ["Mod", "Shift"], key: "D" }],
+      name: "Quick Decrypt",
       callback: () => {
         const modal = new CryptoPadModal(this.app, this);
         modal.setMode("decrypt");
@@ -631,7 +631,6 @@ export default class CryptoPadPlugin extends Plugin {
     this.addCommand({
       id: "replace-with-output",
       name: "Replace selection with encrypted/decrypted text",
-      hotkeys: [{ modifiers: ["Mod", "Shift"], key: "R" }],
       callback: () => {
         if (this.lastModal && this.lastModal.getOutputValue()) {
           this.lastModal.replaceSelectedTextWithOutput();
@@ -645,8 +644,8 @@ export default class CryptoPadPlugin extends Plugin {
   onunload(): void {}
 
   async loadSettings(): Promise<void> {
-    const loaded = await this.loadData();
-    this.settings = Object.assign({}, DEFAULT_SETTINGS, loaded);
+    const loaded = (await this.loadData()) as CryptoPadSettings | null;
+    this.settings = Object.assign({}, DEFAULT_SETTINGS, loaded || {});
   }
 
   async saveSettings(): Promise<void> {
