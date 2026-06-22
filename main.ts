@@ -239,6 +239,13 @@ class CryptoPadModal extends Modal {
     this.inputArea.spellcheck = false;
     this.inputArea.tabIndex = 0;
 
+    // Action button
+    const processBtn = bodyEl.createDiv({ cls: 'cryptopad-result-buttons' });
+    const actionButton = processBtn.createEl('button');
+    actionButton.textContent = 'Process';
+    actionButton.addClass('cryptopad-button');
+    actionButton.tabIndex = 0;
+
     // Error
     this.errorEl = bodyEl.createDiv({ cls: "cryptopad-error cryptopad-error--hidden" });
 
@@ -362,6 +369,9 @@ class CryptoPadModal extends Modal {
         this.errorEl.removeClass("cryptopad-error--hidden");
         this.errorEl.addClass("cryptopad-error--visible");
       }
+    });
+    actionButton.addEventListener('click', () => {
+      void handleAction();
     });
 
     // ── Keyboard shortcuts ──
